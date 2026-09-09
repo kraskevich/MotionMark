@@ -247,6 +247,11 @@ class Point {
         this.y = y;
     }
 
+    clone()
+    {
+        return new Point(this.x, this.y);
+    }
+
     // Used when the point object is used as a size object.
     get width()
     {
@@ -290,6 +295,21 @@ class Point {
             return new Point(this.x * other, this.y * other);
         return new Point(this.x * other.x, this.y * other.y);
     }
+    
+    min(other)
+    {
+        return new Point(Math.min(this.x, other.x), Math.min(this.y, other.y));
+    }
+
+    max(other)
+    {
+        return new Point(Math.max(this.x, other.x), Math.max(this.y, other.y));
+    }
+
+    scale(factor)
+    {
+        return new Point(this.x * factor, this.y * factor);
+    }
 
     move(angle, velocity, timeDelta)
     {
@@ -298,18 +318,65 @@ class Point {
 
     length()
     {
-        return Math.sqrt(this.x * this.x + this.y * this.y);
+        return Math.hypot(this.x, this.y);
     }
 
     normalize()
     {
-        var l = Math.sqrt(this.x * this.x + this.y * this.y);
+        const l = this.length();
         this.x /= l;
         this.y /= l;
         return this;
     }
 }
 
+class Size {
+    static zero = new Size(0, 0);
+
+    constructor(width, height)
+    {
+        this.width = width;
+        this.height = height;
+    }
+
+    clone()
+    {
+        return new Size(this.width, this.height);
+    }
+}
+
+class Rect {
+    constructor(position, size)
+    {
+        this.position = position;
+        this.size = size;
+    }
+    
+    get x()
+    {
+        return this.position.x;
+    }
+
+    get y()
+    {
+        return this.position.y;
+    }
+
+    get width()
+    {
+        return this.size.width;
+    }
+
+    get height()
+    {
+        return this.size.height;
+    }
+    
+    inflatedBy(size)
+    {
+        return new Rect(new Point(this.x - size.width, this.y - size.height), new Size(this.width + 2 * size.width, this.height + 2 * size.height));
+    }
+}
 
 class GeometryHelpers {
     static createPointOnCircle(angle, radius)
@@ -326,6 +393,27 @@ class GeometryHelpers {
     {
         var rect = element.getBoundingClientRect();
         return new Point(rect.width, rect.height); // We should really have a Size class.
+    }
+    
+    // Do an aspect-ratio preserving resize of `rect` to fit in `boundingRect`.
+    static containRect(rect, boundingRect)
+    {
+        const containerAspectRatio = boundingRect.width / boundingRect.height;
+        const rectAspectRatio = rect.width / rect.height;
+        
+        let resultWidth;
+        let resultHeight;
+        if (rectAspectRatio > containerAspectRatio) {
+            resultWidth = boundingRect.width;
+            resultHeight = boundingRect.width / rectAspectRatio;
+        } else {
+            resultWidth = boundingRect.height * rectAspectRatio;
+            resultHeight = boundingRect.height;
+        }
+
+        const x = (boundingRect.width - resultWidth) / 2;
+        const y = (boundingRect.height - resultHeight) / 2;
+        return new Rect(new Point(x, y), new Size(resultWidth, resultHeight));        
     }
 }
 
